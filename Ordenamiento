@@ -1,0 +1,94 @@
+void ordenarLista_MIO(tLista *p, int (*comparar)(const void *, const void *))
+{
+    int ocurrencias = 1,
+        cantEncontrados;
+
+    tNodo *paralelo = NULL,
+          *act,
+          *ini = *p,
+          *r;
+
+    char dniRef[11];
+
+    //Ponemos INI y ACT al final de la lista
+    while(ini->sig)
+        ini = ini->sig;
+    act = ini;
+
+    //Mientras INI sea parte de la lista
+    while(ini)
+    {
+        //Si ACT es NULL,
+        //COMIENZA OTRA BÚSQUEDA
+        if(!act)
+        {
+            ocurrencias++;    //Aumentamos las ocurrencias buscadas
+            act = ini;        //ACT se posiciona al final
+        }
+
+        r = ini;              //R se posiciona al final
+        cantEncontrados = 0;  //La cantidad de encontrados se resetea a 0
+
+        //Mientras R no llegue a NULL, y no haya más encontrados de los que buscamos...
+        while(r && cantEncontrados <= ocurrencias)
+        {
+            //Si ACT y R tienen el mismo DNI,
+            if(!comparar(act->info, r->info))
+                cantEncontrados++;  //Aumenta la cantidad de encontrados
+
+            r = r->ant;             //Luego R Avanza al anterior
+        }
+
+        /*Si los elementos encontados coinciden con las ocurrencias que buscamos...
+          Comenzamos la desvinculación...*/
+        if(cantEncontrados == ocurrencias)
+        {
+            //DESVINCULACIÓN DE NODO(S)
+            strcpy(dniRef, ((tFinal*)act->info)->dni);  //Nos guardamos el DNI usamos para comparar
+            tNodo *rd = ini,                            //Invocamos el puntero que recorre la lista
+                  *aux = NULL;                          //Y el que nos ayuda a no perder posiciones
+
+            //Mientras RD esté recorriendo la lista
+            while(rd)
+            {
+                //Si el DNI de RD es igual al buscado,
+                if(!strcmp(((tFinal*)rd->info)->dni, dniRef))
+                {
+                    aux = rd->ant;          //AUX se prepara para recuperar RD cuando sea desvinculado
+
+                    if(ini == rd)           //Para no desvincular INI, lo movemos al anterior
+                        ini = ini->ant;
+
+                    if(rd->ant)
+                    {
+                        if((rd->ant->sig = rd->sig) != NULL)
+                            rd->sig->ant = rd->ant;
+                    }
+                    else if(rd->sig)
+                        rd->sig->ant = rd->ant;
+
+                    //Agregamos lo quitado a la "lista paralela"
+                    if(!paralelo)
+                    {
+                        paralelo = rd;                  //Estas lineas son en caso de que sea el
+                        paralelo->sig = NULL;           //primer elemento que ponemos ahi
+                    }
+                    else
+                    {
+                        paralelo->ant = rd;             //Caso sea el Segundo, se usan las siguientes
+                        paralelo->ant->sig = paralelo;
+                        paralelo = paralelo->ant;
+                    }
+                    paralelo->ant = NULL;               //En cualquier caso, siempre finaliza con NULL
+
+                    if(act == rd)
+                        act = aux;
+                    rd = aux;
+                }
+                else rd = rd->ant;
+            }
+        }
+        //Si no, ACT avanza al anterior
+        else act = act->ant;
+    }
+}
